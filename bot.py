@@ -1,28 +1,13 @@
+import os
 import telebot
-from telebot import types
+#from telebot import types
 
+#token = os.environ['TELEGRAM_TOKEN']
 bot = telebot.TeleBot('912680602:AAFuJ7VF3CuxO2_giada4gqGP_dwfLqkp5c')
 
 
 def create_markup(keyboard, mod=0):
-    if mod == 0:
-        markup = types.ReplyKeyboardMarkup()
-        for row in keyboard:
-            cells = []
-            for cell in row:
-                item_btn = types.KeyboardButton(cell)
-                cells.append(item_btn)
-            markup.row(*cells)
-        return markup
-    else:
-        markup = types.InlineKeyboardMarkup()
-        for cell in keyboard:
-            if type(cell) is str or len(cell) == 1:
-                return None
-            btn = types.InlineKeyboardButton(text=cell[0], url=cell[1])
-            markup.add(btn)
-        return markup
-
+    pass
 
 @bot.message_handler(commands=['start', 'help'])
 def send_help(message):
@@ -56,3 +41,4 @@ def echo_all(message):
 
 
 bot.polling()
+
