@@ -16,6 +16,7 @@ def send_help(message):
 
 @bot.message_handler(content_types=['text'])
 def echo_all(message):
+    print(message.text)
     text = 'Сори я не понимаю тебя, пльзуйся кнопками'
     if message.text == 'Информация':
         text = 'Информация'
