@@ -11,21 +11,7 @@ def create_markup(keyboard, mod=0):
 
 @bot.message_handler(commands=['start', 'help'])
 def send_help(message):
-    if message.text == '/help':
-        bot.send_message(message.chat.id,
-                         'По всем вопросам обращаться к @r6tuti, даже по самым тупым))')
-    elif message.text == '/start':
-        markup = create_markup(
-            [['Расценки', 'Правила', 'Информация'], ['/help', '/start']])
-        bot.send_message(message.chat.id, 'Какой-то вступительный текст',
-                         reply_markup=markup)
-
-        markup = create_markup(
-            [['Отзывы', 'https://t.me/joinchat/R9n7l7rBOx1jZjIy'],
-             ['Магазины', 'https://t.me/joinchat/R9n7l7rBOx1jZjIy']], 1)
-        bot.send_message(message.chat.id,
-                         'Ещё какой-то текст, чтоб объяснить ссылки ниже',
-                         reply_markup=markup)
+    bot.send_message(message.chat.id, 'тут типо помощь')
 
 
 @bot.message_handler(content_types=['text'])
