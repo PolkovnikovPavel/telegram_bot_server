@@ -12,3 +12,4 @@ requests==2.13.0
 six==1.10.0
 virtualenv==15.1.0
 virtualenv-clone==0.3.0
+pymysql==1.0.2
