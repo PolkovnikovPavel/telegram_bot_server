@@ -20,7 +20,7 @@ def send_help(message):
     item_btn2 = types.KeyboardButton('все данные из test1')
     markup.row(item_btn1, item_btn2)
 
-    bot.send_message(message.chat.id, 'тут типо помощь',
+    bot.send_message(message.chat.id, 'напиши "добавить : <int>;<int>;<str>"',
                          reply_markup=markup)
 
 
@@ -35,7 +35,19 @@ def echo_all(message):
     elif message.text == 'Расценки':
         text = 'Цена не высока и варируется от кол-ва вашего заказа (об этом более подробно сказано в разделе "Информация") от 30 до 25%'
     elif message.text == 'все данные из test1':
-        text = 'все данные'
+        text = ''
+        cur.execute('''SELECT DISTINCT * FROM test1''')
+        results = cur.fetchall()
+        for items in results:
+            text += str(items) + '\n'
+    elif 'добавить :' in message.text:
+        num1, num2, str1 = message.text.split('добавить :')[-1].split(';')
+        inquiry = f"""INSERT INTO test1
+                           VALUES ({int(num1)}, {int(num2)}, '{str1}')"""
+        cur.execute(inquiry)
+        con.commit()
+        text = 'в test1 успешно добавлены данные, теперь можно их посмотреть'
+
     bot.send_message(message.chat.id, text)
 
 
