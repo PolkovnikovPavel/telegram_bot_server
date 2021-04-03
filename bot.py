@@ -10,32 +10,42 @@ cur = con.cursor()
 timer_con = time.time()
 
 
-def check_timer_con():
+def create_con():
     global con, cur, timer_con
-    if time.time() - timer_con > 600:
-        text = f'Срок действия курсора вышел ({int(time.time() - timer_con)}сек.)'
-        print(text)
-        con = pymysql.connect(host="us-cdbr-east-03.cleardb.com",
-                              user="b40f50224688c7", passwd="d01ea3eb",
-                              db='heroku_80fffc474875cce')
-        cur = con.cursor()
-        timer_con = time.time()
+    text = f'Срок действия курсора вышел ({int(time.time() - timer_con)}сек.)'
+    print(text)
+    con = pymysql.connect(host="us-cdbr-east-03.cleardb.com",
+                          user="b40f50224688c7", passwd="d01ea3eb",
+                          db='heroku_80fffc474875cce')
+    cur = con.cursor()
+    timer_con = time.time()
 
-        inquiry = f"""INSERT INTO test1
-                    VALUES ({int(time.time())}, {1000}, '{text}')"""
-        cur.execute(inquiry)
-        con.commit()
+    inquiry = f"""INSERT INTO test1
+                        VALUES ({int(time.time())}, {1000}, '{text}')"""
+    cur.execute(inquiry)
+    con.commit()
+
+
+def check_timer_con(mod=0):
+    if mod == 1:
+        create_con()
+    if time.time() - timer_con > 600:
+        create_con()
 
 
 def create_markup(keyboard, mod=0):
     pass
 
 
-@bot.message_handler(commands=['start', 'help', 'reload'])
+@bot.message_handler(commands=['start', 'help', 'reload', 'reset_con'])
 def send_help(message):
     if message.text == '/reload':
         bot.send_message(message.chat.id, 'Сейчас будет специально допущенна ошибка деления на 0, из за чего сервер падёт и после этого через 1-2 минуты перезагрузиться')
         print(1/0)
+    elif message.text == '/reset_con':
+        check_timer_con(1)
+        bot.send_message(message.chat.id,
+    'Переподключение к базе данных прошло успешно. И теперь в test1 есть об этом данные')
     elif message.text == '/help' or message.text == 'start':
         markup = types.ReplyKeyboardMarkup()
         item_btn1 = types.KeyboardButton('Правила')
