@@ -13,12 +13,18 @@ timer_con = time.time()
 def check_timer_con():
     global con, cur, timer_con
     if time.time() - timer_con > 600:
-        print(f'Срок действия курсора вышел ({int(time.time() - timer_con)}сек.)')
+        text = f'Срок действия курсора вышел ({int(time.time() - timer_con)}сек.)'
+        print(text)
         con = pymysql.connect(host="us-cdbr-east-03.cleardb.com",
                               user="b40f50224688c7", passwd="d01ea3eb",
                               db='heroku_80fffc474875cce')
         cur = con.cursor()
         timer_con = time.time()
+
+        inquiry = f"""INSERT INTO test1
+                    VALUES ({int(time.time())}, {1000}, '{text}')"""
+        cur.execute(inquiry)
+        con.commit()
 
 
 def create_markup(keyboard, mod=0):
