@@ -3,8 +3,9 @@ import telebot, pymysql, time
 from telebot import types
 from textes import *
 
-#token = os.environ['TELEGRAM_TOKEN']
-bot = telebot.TeleBot('912680602:AAFuJ7VF3CuxO2_giada4gqGP_dwfLqkp5c')
+token = os.environ['TELEGRAM_TOKEN']
+#token = '912680602:AAFuJ7VF3CuxO2_giada4gqGP_dwfLqkp5c'
+bot = telebot.TeleBot(token)
 
 con = pymysql.connect(host="us-cdbr-east-03.cleardb.com", user="b40f50224688c7", passwd="d01ea3eb", db='heroku_80fffc474875cce')
 cur = con.cursor()
