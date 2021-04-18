@@ -332,7 +332,7 @@ def echo_all(message):
                 text = text_16
                 markup = create_markup([[button_11], [button_12], [button_back]])
             elif message.text == button_5:
-                text = f'{text_20} {data_of_person[6]} Руб. И пригласили {data_of_person[6]} человек'
+                text = f'{text_20} {data_of_person[6]} Руб. И пригласили {data_of_person[7]} человек'
                 markup = create_markup(buttons_main_menu)
             elif message.text == button_13:
                 inquiry = f"""UPDATE users
