@@ -44,10 +44,15 @@ def generate_special_code(message):
     return cod
 
 
-def generate_pay_code(message):
-    num = str(time.time())[-5:]
-    r = random.choice(range(1000, 9999))
-    return str(r) + str(message.chat.id) + num
+def generate_pay_code(message, mod=0):
+    if mod == 0:
+        num = str(time.time())[-5:]
+        r = random.choice(range(1000, 9999))
+        return str(r) + str(message.chat.id) + num
+    else:
+        num = str(time.time())[-5:]
+        r = random.choice(range(1000, 9999))
+        return str(r) + str(message) + num
 
 
 def send_msg_to_comment(text):
@@ -79,7 +84,7 @@ def create_user(message, mod=False):
     if not result:
         pay_code = generate_pay_code(message)
         inquiry = f"""INSERT INTO users
-VALUES ({message.chat.id}, '', '', '', '', '{pay_code}', '0', 0, 0, '80', '0', 0, 0)"""
+VALUES ({message.chat.id}, '', '', '', '', '{pay_code}', '0', 0, 0, '80', '0', 0, 0, 0)"""
         cur.execute(inquiry)
         con.commit()
         print(f'добавлен новый пользователь, id = {message.chat.id}, зовут {message.chat.first_name} {message.chat.last_name}')
@@ -101,10 +106,10 @@ def create_mini_invite_code(message):
 
 def create_invite_code(message, data_of_person):
     check_timer_con()
-    if float(data_of_person[10]) < 50:
+    if float(data_of_person[10]) < 100:
         bot.send_message(message.chat.id, text_31)
         return False
-    new_balance = float(data_of_person[10]) - 50
+    new_balance = float(data_of_person[10]) - 100
     new_invite_code = generate_special_code(message)
     if data_of_person[4] != '0':
         cur.execute(f"""SELECT DISTINCT * FROM users
@@ -114,12 +119,31 @@ def create_invite_code(message, data_of_person):
             if result[12] == 0:
                 num_phone = result[3]
                 if data_of_person[4][-1] == '1':
-                    summ = 50 * float(result[9])
+                    summ = 100 * float(result[9]) / 100
                 else:
-                    summ = 50 * float(result[9]) / 2
+                    summ = 100 * float(result[9]) / 200
 
                 print(f'Тут должен быть перевод {summ} руб. на номер {num_phone}')
                 bot.send_message(message.chat.id, f'Тут должен быть перевод {summ} руб. на номер {num_phone}')
+
+                inquiry = f"""UPDATE users
+        SET balance = '{new_balance}', invite_code = '{new_invite_code}'
+            WHERE id = '{message.chat.id}'"""
+                cur.execute(inquiry)
+                con.commit()
+
+                inquiry = f"""UPDATE users
+        SET amount_earned = '{result[6] + summ}', amount_withdrawn = '{result[13] + summ}'
+            WHERE id = '{result[0]}'"""
+                cur.execute(inquiry)
+                con.commit()
+                bot.send_message(message.chat.id, text_32)
+                return new_invite_code
+            else:
+                if data_of_person[4][-1] == '1':
+                    summ = 100 * float(result[9]) / 100
+                else:
+                    summ = 100 * float(result[9]) / 200
 
                 inquiry = f"""UPDATE users
         SET balance = '{new_balance}', invite_code = '{new_invite_code}'
@@ -134,10 +158,9 @@ def create_invite_code(message, data_of_person):
                 con.commit()
                 bot.send_message(message.chat.id, text_32)
                 return new_invite_code
-            else:
-                pass   # тут всё тоже самое, но перевод на карту
+
         elif data_of_person[4][0] == '1':
-            pass  # это на тот момент, когда, оплата станет 100 рублей, а не 50
+            pass  # это на тот момент, когда, оплата станет 150 рублей, а не 100
     else:
         inquiry = f"""UPDATE users
         SET balance = '{new_balance}', invite_code = '{new_invite_code}'
@@ -149,7 +172,7 @@ def create_invite_code(message, data_of_person):
 
 
 def acquaintance_with_the_bot(message):
-    markup = create_markup([['Отзывы', 'https://t.me/joinchat/GP4M-utAjARjYTBi'],
+    markup = create_markup([['Отзывы', 'https://t.me/Real_money_otzivi'],
                             ['Общий чат', 'https://t.me/joinchat/VGR26kXHtd03NGM6'],
                             ['продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky']], mod=1)
 
@@ -244,7 +267,7 @@ def create_markup(keyboard, mod=0):
     return markup
 
 
-@bot.message_handler(commands=['start', 'help', 'reload_server_652431', 'reset_con'])
+@bot.message_handler(commands=['start', 'help', 'reload_server', 'reset_con'])
 def send_help(message):
     if message.text == '/reload_server_652431':
         bot.send_message(message.chat.id, 'Сейчас будет специально допущенна ошибка деления на 0, из за чего сервер падёт и после этого через 1-2 минуты перезагрузиться')
@@ -252,17 +275,17 @@ def send_help(message):
     elif message.text == '/reset_con':
         check_timer_con(1)
         bot.send_message(message.chat.id,
-    'Переподключение к базе данных прошло успешно. И теперь в test1 есть об этом данные')
+    'Переподключение к базе данных прошло успешно.')
 
     elif message.text == '/start':
         create_user(message)
 
     elif message.text == '/help':
-        markup = create_markup([['Информация', 'Правила'], ['все данные из test1', 'все данные из users']])
+        markup = create_markup([['Отзывы', 'https://t.me/Real_money_otzivi'],
+                                ['Общий чат', 'https://t.me/joinchat/VGR26kXHtd03NGM6'],
+                                ['продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky']], mod=1)
 
-        bot.send_message(message.chat.id, '''напиши "добавить : <int>;<int>;<str>", чтоб добавить новые данные в таблицу test1
-    напиши "удалить : <int>", чтоб удалить выбранную строку из таблицы test1''',
-                             reply_markup=markup)
+        bot.send_message(text_40, reply_markup=markup)
 
 
 @bot.channel_post_handler(content_types=['text'])
@@ -332,15 +355,15 @@ def echo_all(message):
                 text = text_16
                 markup = create_markup([[button_11], [button_12], [button_back]])
             elif message.text == button_5:
-                text = f'{text_20} {data_of_person[6]} Руб. И пригласили {data_of_person[7]} человек'
-                markup = create_markup(buttons_main_menu)
+                if data_of_person[12] == 0:
+                    text = f'{text_20} {data_of_person[6]} Руб. И пригласили {data_of_person[7]} человек(а)'
+                    markup = create_markup(buttons_main_menu)
+                else:
+                    bot.send_message(message.chat.id, f'{text_20} {data_of_person[6]} Руб. И пригласили {data_of_person[7]} человек(а)')
+                    bot.send_message(message.chat.id, text_37)
+                    text = f'На данный момент у вас накопилось не выведенных средств на сумму {data_of_person[6] - data_of_person[13]} руб.'
             elif message.text == button_13:
-                inquiry = f"""UPDATE users
-                SET balance = '{float(data_of_person[10]) + 15}'
-                    WHERE id = '{message.chat.id}'"""
-                cur.execute(inquiry)
-                con.commit()
-                text = 'Это временно (баланс +15 руб)'
+                text = 'В разработке'
 
             elif message.text == button_7:
                 if data_of_person[3] == '':
@@ -354,11 +377,13 @@ def echo_all(message):
                         markup = markup = create_markup([[button_17], [button_18], [button_back]])
                     elif data_of_person[1] == '' and data_of_person[2] != '':
                         bot.send_message(message.chat.id, f'{text_33} "{data_of_person[2]}" (ковычки не надо)')
+                        bot.send_message(message.chat.id, f'С этим кодом вы будите получать {int(float(data_of_person[9]) * 100) // 200}%')
                         change_type_menu(message, 9)
                         text = text_34
                         markup = markup = create_markup([[button_16], [button_back]])
                     else:
-                        text = text_30 + f' "{data_of_person[1]}" (ковычки не надо)'
+                        bot.send_message(message.chat.id, text_30 + f' "{data_of_person[1]}" (ковычки не надо)')
+                        text = f'С этим кодом вы будите получать {data_of_person[9]}%'
                         markup = create_markup(buttons_main_menu)
                         change_type_menu(message, 2)
             else:
@@ -375,8 +400,9 @@ def echo_all(message):
                 text = text_22
                 markup = markup = create_markup([[button_back]])
             elif message.text == button_15:
-                text = 'В разработке'
-                markup = markup = create_markup([[button_14], [button_15], [button_back]])
+                change_type_menu(message, 11)
+                text = text_36
+                markup = markup = create_markup([[button_back]])
 
         elif data_of_person[11] == 8:
             if message.text == button_back:
@@ -388,7 +414,7 @@ def echo_all(message):
                 if num_phone:
                     check_timer_con()
                     inquiry = f"""UPDATE users
-    SET type_menu = 9, num_phone = '{num_phone}'
+    SET type_menu = 9, num_phone = '{num_phone}', payment_type = 0
         WHERE id = '{message.chat.id}'"""
                     cur.execute(inquiry)
                     con.commit()
@@ -398,6 +424,23 @@ def echo_all(message):
                 else:
                     text = text_24
                     markup = markup = create_markup([[button_back]])
+
+        elif data_of_person[11] == 11:
+            if message.text == button_back:
+                change_type_menu(message, 7)
+                text = text_21
+                markup = markup = create_markup([[button_14], [button_15], [button_back]])
+            else:
+                num_phone = message.text
+                check_timer_con()
+                inquiry = f"""UPDATE users
+    SET type_menu = 9, num_phone = '{num_phone}', payment_type = 1
+        WHERE id = '{message.chat.id}'"""
+                cur.execute(inquiry)
+                con.commit()
+                bot.send_message(message.chat.id, text_25)
+                text = text_26
+                markup = markup = create_markup([[button_16], [button_back]])
 
         elif data_of_person[11] == 9:
             if message.text == button_back:
@@ -455,7 +498,13 @@ def echo_all(message):
                 markup = create_markup([[button_10], [button_back]])
 
             elif message.text == button_12:
-                text = 'В разработке'
+                bot.send_message(message.chat.id, f'{text_38} "{data_of_person[5]}" (ковычки не надо)')
+                bot.send_message(message.chat.id, text_39)
+                text = text_6
+                markup = create_markup(buttons_main_menu)
+                change_type_menu(message, 2)
+            else:
+                text = 'не понимаю...'
                 markup = create_markup([[button_11], [button_12], [button_back]])
 
         elif data_of_person[11] == 6:
@@ -553,9 +602,79 @@ def echo_all(message):
                 text = 'строка с данными успещно была удалена'
             else:
                 text = f'тут нечего удалять, нету ни одной записи, в которой id = {id}'
-        elif 'отзыв: ' in message.text:
-            text = message.text.split('отзыв: ')[-1]
-            send_msg_to_comment(text)
+        elif 'пополнить;' in message.text:
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                summ, cod = message.text.split('пополнить;')[-1].split(';')
+                summ = float(summ)
+                check_timer_con()
+                cur.execute(f"""SELECT DISTINCT * FROM users
+        WHERE pay_code = '{cod}'""")
+                result = cur.fetchall()
+                if result:
+                    new_balance = float(result[0][10]) + summ
+                    new_pay_code = generate_pay_code(result[0][0], mod=1)
+                    inquiry = f"""UPDATE users
+    SET balance = '{new_balance}', pay_code = '{new_pay_code}'
+        WHERE id = '{result[0][0]}'"""
+                    cur.execute(inquiry)
+                    con.commit()
+                    bot.send_message(int(result[0][0]), text_41)
+                    text = 'Баланс этого человвека пополнен и его код сменился'
+                else:
+                    text = 'Этот код уже сменился'
+
+            else:
+                text = text_35
+
+        elif 'посмотреть выводы' == message.text.lower():
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                check_timer_con()
+                text = ''
+                cur.execute('''SELECT DISTINCT * FROM users''')
+                all_users = cur.fetchall()
+                markup_ = []
+                for user in all_users:
+                    summ = int(user[6]) - int(user[13])
+                    if summ >= 0:
+                        text += f'{user[0]}: {summ} руб. на номер {user[3]}\n\n'
+                        markup_.append([f'вывести;{user[0]};{summ}', f'притензия;{user[0]}'])
+                if len(markup_) != 0:
+                    markup = create_markup(markup_)
+                if text == '':
+                    text = 'Никому ничего не нужно'
+
+            else:
+                text = text_35
+
+        elif 'вывести;' in message.text:
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                id, summ = message.text.split('вывести;')[-1].split(';')
+                summ = int(summ)
+                check_timer_con()
+
+                cur.execute(f"""SELECT DISTINCT * FROM users
+        WHERE id = '{id}'""")
+                result = cur.fetchall()
+                print(result)
+
+                inquiry = f"""UPDATE users
+    SET amount_withdrawn = '{int(result[0][13]) + summ}'
+        WHERE id = '{id}'"""
+                cur.execute(inquiry)
+                con.commit()
+                bot.send_message(int(result[0][0]), text_42)
+                text = 'Баланс этого человвека обнавлён'
+            else:
+                text = text_35
+
+        elif 'притензия;' in message.text:
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                id = int(message.text.split('притензия;')[-1])
+                bot.send_message(id, text_43)
+                text = 'ему сообщило об ошибке'
+
+            else:
+                text = text_35
 
 
     except Exception:
