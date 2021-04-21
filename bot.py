@@ -59,6 +59,10 @@ def send_msg_to_comment(text):
     bot.send_message('@Real_money_otzivi', text)
 
 
+def send_msg_to_support(text):
+    bot.send_message('@Real_money_support', text)
+
+
 def get_data_of_person(message):
     check_timer_con()
     cur.execute(f'''SELECT DISTINCT * FROM users
@@ -174,7 +178,9 @@ def create_invite_code(message, data_of_person):
 def acquaintance_with_the_bot(message):
     markup = create_markup([['Отзывы', 'https://t.me/Real_money_otzivi'],
                             ['Общий чат', 'https://t.me/joinchat/VGR26kXHtd03NGM6'],
-                            ['продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky']], mod=1)
+                            ['Ответы на популярные вопросы', 'https://t.me/otvety_na_popularnye_voprosy'],
+                            ['Продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky'],
+                            ['Правила', 'https://t.me/Real_mony_pravila']], mod=1)
 
     bot.send_message(message.chat.id, text_5, reply_markup=markup)
     change_type_menu(message, 2)
@@ -267,25 +273,61 @@ def create_markup(keyboard, mod=0):
     return markup
 
 
-@bot.message_handler(commands=['start', 'help', 'reload_server', 'reset_con'])
+@bot.message_handler(commands=['start', 'help', 'reload_server', 'reset_con', 'helpp'])
 def send_help(message):
-    if message.text == '/reload_server_652431':
+    if message.text == '/reload_server':
         bot.send_message(message.chat.id, 'Сейчас будет специально допущенна ошибка деления на 0, из за чего сервер падёт и после этого через 1-2 минуты перезагрузиться')
         print(1/0)
     elif message.text == '/reset_con':
         check_timer_con(1)
-        bot.send_message(message.chat.id,
-    'Переподключение к базе данных прошло успешно.')
+        bot.send_message(message.chat.id, 'Переподключение к базе данных прошло успешно.')
 
     elif message.text == '/start':
-        create_user(message)
+        check_timer_con()
+        cur.execute(f"""SELECT DISTINCT * FROM users
+    WHERE id = '{message.chat.id}'""")
+        result = cur.fetchall()
+        if result and result[0][11] >= 2:
+            text = text_6
+            markup = create_markup(buttons_main_menu)
+            change_type_menu(message, 2)
+            bot.send_message(message.chat.id, text, reply_markup=markup)
+        else:
+            create_user(message)
+
+    elif message.text == '/helpp':
+        if message.chat.id == 1376490092 or message.chat.id == 668018945:
+            markup = create_markup([['посмотреть выводы'], ['все данные из users']])
+            text = f'''Это документация по командам, нужна чтоб выполнять секретные функции:
+
+* "посмотреть выводы" - отображает список, кому сколько нужно вывести на указанную карту, там же есть 2 типа кнопок:
+* * "вывести;<id>;<сумма>" - просто обнуляет счётчик, говоря о том, что этот пользователь получил себе на карту указанную сумму
+* * "притензия;<id>" - сообщаяет пользователю, что у негоо не правильно указанны данные карты и наш сотрудник не может ему сделать перевод
+
+* "все данные из users" - отображает вообще все данные о пользователях (каждый с новой строки), я не знаю зачем это может понадобиться, разве только чтоб скопировать базу данных
+
+* "пополнить;<сумма>;<однаразовый код> - человеку с указанным однаразовым кодом добавляет на баланс указанную сумму, и сразу после этого создаёт новый однаразовый код (этот код по идее нужно посмотреть в истории Сбербанка в сообщение к переводу (человек по правилам, длжен был написать его))"
+
+* "ответ поддержки;<id>;<сообщение>" - эта команда просто пишет введённое сооьщение указаному человеку
+
+* "забыть;<id> - удалить все данные об указанном пользователе"
+
+* "/reload_server" - перезагружает сервер
+
+* "/reset_con" - переподключается к базе данных'''
+            bot.send_message(message.chat.id, text, reply_markup=markup)
+        else:
+            bot.send_message(message.chat.id, text_35)
+
 
     elif message.text == '/help':
         markup = create_markup([['Отзывы', 'https://t.me/Real_money_otzivi'],
                                 ['Общий чат', 'https://t.me/joinchat/VGR26kXHtd03NGM6'],
-                                ['продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky']], mod=1)
+                                ['Ответы на популярные вопросы', 'https://t.me/otvety_na_popularnye_voprosy'],
+                                ['Продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky'],
+                                ['Правила', 'https://t.me/Real_mony_pravila']], mod=1)
 
-        bot.send_message(text_40, reply_markup=markup)
+        bot.send_message(message.chat.id, text_40, reply_markup=markup)
 
 
 @bot.channel_post_handler(content_types=['text'])
@@ -314,8 +356,12 @@ def echo_all(message):
                     text = text_3
                     markup = create_markup([[button_2]])
 
+                    cur.execute(f"""SELECT DISTINCT * FROM users
+            WHERE invite_code = '{message.text}' OR mini_invite_code = '{message.text}'""")
+                    result = cur.fetchall()[0]
+
                     inquiry = f"""UPDATE users
-        SET number_invitees = '{data_of_person[7] + 1}'
+        SET number_invitees = '{result[7] + 1}'
             WHERE invite_code = '{message.text}' OR mini_invite_code = '{message.text}'"""
                     cur.execute(inquiry)
                     con.commit()
@@ -363,7 +409,9 @@ def echo_all(message):
                     bot.send_message(message.chat.id, text_37)
                     text = f'На данный момент у вас накопилось не выведенных средств на сумму {data_of_person[6] - data_of_person[13]} руб.'
             elif message.text == button_13:
-                text = 'В разработке'
+                change_type_menu(message, 12)
+                text = text_44
+                markup = create_markup(buttons_setings_menu)
 
             elif message.text == button_7:
                 if data_of_person[3] == '':
@@ -387,8 +435,45 @@ def echo_all(message):
                         markup = create_markup(buttons_main_menu)
                         change_type_menu(message, 2)
             else:
-                text = 'В разработке'
+                text = 'Не понимаю...'
                 markup = create_markup(buttons_main_menu)
+
+        elif data_of_person[11] == 12:
+            if message.text == button_back:
+                text = text_6
+                markup = create_markup(buttons_main_menu)
+                change_type_menu(message, 2)
+            elif message.text == button_21:
+                change_type_menu(message, 13)
+                text = text_45
+                markup = markup = create_markup([[button_back]])
+            elif message.text == button_22:
+                markup = create_markup([['Отзывы', 'https://t.me/Real_money_otzivi'],
+                                        ['Общий чат', 'https://t.me/joinchat/VGR26kXHtd03NGM6'],
+                                        ['Ответы на популярные вопросы', 'https://t.me/otvety_na_popularnye_voprosy'],
+                                        ['Продвижение в соцсетях', 'https://t.me/joinchat/eJCM8XbEOwA1MDky'],
+                                        ['Правила', 'https://t.me/Real_mony_pravila']], mod=1)
+
+                bot.send_message(message.chat.id, text_47, reply_markup=markup)
+                text = text_6
+                markup = create_markup(buttons_main_menu)
+                change_type_menu(message, 2)
+            else:
+                text = 'Не понимаю...'
+                markup = create_markup(buttons_setings_menu)
+
+        elif data_of_person[11] == 13:
+            if message.text == button_back:
+                change_type_menu(message, 12)
+                text = text_44
+                markup = create_markup(buttons_setings_menu)
+            else:
+                msg = f'{message.chat.id}: {message.text}'
+                send_msg_to_support(msg)
+                bot.send_message(message.chat.id, text_46)
+                text = text_6
+                markup = create_markup(buttons_main_menu)
+                change_type_menu(message, 2)
 
         elif data_of_person[11] == 7:
             if message.text == button_back:
@@ -566,42 +651,17 @@ def echo_all(message):
                 con.commit()
 
 
-        if message.text == 'все данные из test1':
-            check_timer_con()
-            text = ''
-            cur.execute('''SELECT DISTINCT * FROM test1''')
-            results = cur.fetchall()
-            for items in results:
-                text += str(items) + '\n'
-        elif message.text == 'все данные из users':
-            check_timer_con()
-            text = ''
-            cur.execute('''SELECT DISTINCT * FROM users''')
-            results = cur.fetchall()
-            for items in results:
-                text += str(items) + '\n'
-        elif 'добавить :' in message.text:
-            check_timer_con()
-            num1, num2, str1 = message.text.split('добавить :')[-1].split(';')
-            inquiry = f"""INSERT INTO test1
-                               VALUES ({int(num1)}, {int(num2)}, '{str1}')"""
-            cur.execute(inquiry)
-            con.commit()
-            text = 'в test1 успешно добавлены данные, теперь можно их посмотреть'
-        elif 'удалить :' in message.text:
-            check_timer_con()
-            id = int(message.text.split('удалить :')[-1])
-            cur.execute(f"""SELECT DISTINCT * FROM test1
-                    WHERE id = {id}""")
-            results = cur.fetchall()
-            if results:
-                inquiry = f"""DELETE FROM test1
-                    WHERE id = {id}"""
-                cur.execute(inquiry)
-                con.commit()
-                text = 'строка с данными успещно была удалена'
+        if message.text.lower() == 'все данные из users':
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                check_timer_con()
+                text = ''
+                cur.execute('''SELECT DISTINCT * FROM users''')
+                results = cur.fetchall()
+                for items in results:
+                    text += str(items) + '\n\n'
             else:
-                text = f'тут нечего удалять, нету ни одной записи, в которой id = {id}'
+                text = text_35
+
         elif 'пополнить;' in message.text:
             if message.chat.id == 1376490092 or message.chat.id == 668018945:
                 summ, cod = message.text.split('пополнить;')[-1].split(';')
@@ -655,7 +715,6 @@ def echo_all(message):
                 cur.execute(f"""SELECT DISTINCT * FROM users
         WHERE id = '{id}'""")
                 result = cur.fetchall()
-                print(result)
 
                 inquiry = f"""UPDATE users
     SET amount_withdrawn = '{int(result[0][13]) + summ}'
@@ -672,10 +731,35 @@ def echo_all(message):
                 id = int(message.text.split('притензия;')[-1])
                 bot.send_message(id, text_43)
                 text = 'ему сообщило об ошибке'
+            else:
+                text = text_35
+
+        elif 'ответ поддержки;' in message.text:
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                id, msg = message.text.split('ответ поддержки;')[-1].split(';')
+                try:
+                    id = int(id)
+                    bot.send_message(id, f'Здравствуйте, вам поступило сообщение от поддержки:\n{msg}')
+                    text = 'Этому человеку было успешно отправленно сообщение'
+                except Exception:
+                    text = 'Что-то не так с id'
 
             else:
                 text = text_35
 
+        elif 'забыть;' in message.text:
+            if message.chat.id == 1376490092 or message.chat.id == 668018945:
+                id = int(message.text.split('забыть;')[-1])
+
+                inquiry = f"""DELETE FROM users
+        WHERE id = '{id}'"""
+                cur.execute(inquiry)
+                con.commit()
+
+                bot.send_message(id, 'Ваш аккаунт был забыт, и теперь вы можете начать сначала /start')
+                text = 'указанный аккаунт бвл стёрт из базы данных, и ему об этом сообщило'
+            else:
+                text = text_35
 
     except Exception:
         text = 'что-то пошло не так. Попробуйте ещё раз, а мы пока всё наладим'
