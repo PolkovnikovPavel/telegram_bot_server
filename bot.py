@@ -458,6 +458,10 @@ def echo_all(message):
                 text = text_6
                 markup = create_markup(buttons_main_menu)
                 change_type_menu(message, 2)
+            elif message.text == button_20:
+                change_type_menu(message, 14)
+                text = text_21
+                markup = markup = create_markup([[button_14], [button_15], [button_back]])
             else:
                 text = 'Не понимаю...'
                 markup = create_markup(buttons_setings_menu)
@@ -474,6 +478,59 @@ def echo_all(message):
                 text = text_6
                 markup = create_markup(buttons_main_menu)
                 change_type_menu(message, 2)
+
+        elif data_of_person[11] == 14:
+            if message.text == button_back:
+                change_type_menu(message, 12)
+                text = text_44
+                markup = create_markup(buttons_setings_menu)
+            elif message.text == button_14:
+                change_type_menu(message, 15)
+                text = text_22
+                markup = markup = create_markup([[button_back]])
+            elif message.text == button_15:
+                change_type_menu(message, 16)
+                text = text_36
+                markup = markup = create_markup([[button_back]])
+
+        elif data_of_person[11] == 15:
+            if message.text == button_back:
+                change_type_menu(message, 14)
+                text = text_21
+                markup = markup = create_markup([[button_14], [button_15], [button_back]])
+            else:
+                num_phone = check_num_phone(message.text)
+                if num_phone:
+                    check_timer_con()
+                    inquiry = f"""UPDATE users
+    SET type_menu = 2, num_phone = '{num_phone}', payment_type = 0
+        WHERE id = '{message.chat.id}'"""
+                    cur.execute(inquiry)
+                    con.commit()
+                    bot.send_message(message.chat.id, text_25)
+                    text = text_6
+                    markup = create_markup(buttons_main_menu)
+                else:
+                    text = text_24
+                    markup = markup = create_markup([[button_back]])
+
+        elif data_of_person[11] == 16:
+            if message.text == button_back:
+                change_type_menu(message, 14)
+                text = text_21
+                markup = markup = create_markup([[button_14], [button_15], [button_back]])
+            else:
+                num_phone = message.text
+                check_timer_con()
+                inquiry = f"""UPDATE users
+    SET type_menu = 2, num_phone = '{num_phone}', payment_type = 1
+        WHERE id = '{message.chat.id}'"""
+                cur.execute(inquiry)
+                con.commit()
+                bot.send_message(message.chat.id, text_25)
+                text = text_6
+                markup = create_markup(buttons_main_menu)
+
 
         elif data_of_person[11] == 7:
             if message.text == button_back:
