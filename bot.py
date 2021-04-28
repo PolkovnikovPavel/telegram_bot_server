@@ -108,6 +108,22 @@ def create_mini_invite_code(message):
     bot.send_message(message.chat.id, f'Ваш новый пригласительный код "{new_mini_invite_code}" (ковычки не надо)')
 
 
+# Перевод на QIWI Кошелек
+def send_p2p(api_access_token, to_qw, comment, sum):
+    s = requests.Session()
+    s.headers = {'content-type': 'application/json'}
+    s.headers['authorization'] = 'Bearer ' + api_access_token
+    s.headers['User-Agent'] = 'Android v3.2.0 MKT'
+    s.headers['Accept'] = 'application/json'
+    postjson = {"id":"","sum":{"amount":"","currency":""},"paymentMethod":{"type":"Account","accountId":"643"}, "comment":f"{comment}","fields":{"account":""}}
+    postjson['id'] = str(int(time.time() * 1000))
+    postjson['sum']['amount'] = sum
+    postjson['sum']['currency'] = '643'
+    postjson['fields']['account'] = to_qw
+    res = s.post('https://edge.qiwi.com/sinap/api/v2/terms/99/payments',json = postjson)
+    return res.json()
+
+
 def create_invite_code(message, data_of_person):
     check_timer_con()
     if float(data_of_person[10]) < 100:
@@ -127,8 +143,8 @@ def create_invite_code(message, data_of_person):
                 else:
                     summ = 100 * float(result[9]) / 200
 
-                print(f'Тут должен быть перевод {summ} руб. на номер {num_phone}')
-                bot.send_message(message.chat.id, f'Тут должен быть перевод {summ} руб. на номер {num_phone}')
+                print(f'Тут перевод {summ} руб. на номер {num_phone}')
+                translation_result = send_p2p(api_access_token, f'+{num_phone}', 'Это за вашу активность', summ)
 
                 inquiry = f"""UPDATE users
         SET balance = '{new_balance}', invite_code = '{new_invite_code}'
@@ -136,11 +152,20 @@ def create_invite_code(message, data_of_person):
                 cur.execute(inquiry)
                 con.commit()
 
-                inquiry = f"""UPDATE users
-        SET amount_earned = '{result[6] + summ}', amount_withdrawn = '{result[13] + summ}'
+                if 'id' in translation_result:
+                    inquiry = f"""UPDATE users
+            SET amount_earned = '{result[6] + summ}', amount_withdrawn = '{result[13] + summ}'
+                WHERE id = '{result[0]}'"""
+                    cur.execute(inquiry)
+                    con.commit()
+                else:
+                    inquiry = f"""UPDATE users
+        SET amount_earned = '{result[6] + summ}'
             WHERE id = '{result[0]}'"""
-                cur.execute(inquiry)
-                con.commit()
+                    cur.execute(inquiry)
+                    con.commit()
+                    send_msg_to_support('Какие-то проблемы с qiwi')
+                    bot.send_message(int(result[0]), text_48)
                 bot.send_message(message.chat.id, text_32)
                 return new_invite_code
             else:
@@ -425,7 +450,7 @@ def echo_all(message):
                         markup = markup = create_markup([[button_17], [button_18], [button_back]])
                     elif data_of_person[1] == '' and data_of_person[2] != '':
                         bot.send_message(message.chat.id, f'{text_33} "{data_of_person[2]}" (ковычки не надо)')
-                        bot.send_message(message.chat.id, f'С этим кодом вы будите получать {int(float(data_of_person[9]) * 100) // 200}%')
+                        bot.send_message(message.chat.id, f'С этим кодом вы будите получать {int(float(data_of_person[9]) * 100) // 200}% от всей прибыли')
                         change_type_menu(message, 9)
                         text = text_34
                         markup = markup = create_markup([[button_16], [button_back]])
@@ -640,8 +665,9 @@ def echo_all(message):
                 markup = create_markup([[button_10], [button_back]])
 
             elif message.text == button_12:
-                bot.send_message(message.chat.id, f'{text_38} "{data_of_person[5]}" (ковычки не надо)')
-                bot.send_message(message.chat.id, text_39)
+                bot.send_message(message.chat.id, 'Временно не работает')
+                #bot.send_message(message.chat.id, f'{text_38} "{data_of_person[5]}" (ковычки не надо)')
+                #bot.send_message(message.chat.id, text_39)
                 text = text_6
                 markup = create_markup(buttons_main_menu)
                 change_type_menu(message, 2)
@@ -752,7 +778,7 @@ def echo_all(message):
                 markup_ = []
                 for user in all_users:
                     summ = int(user[6]) - int(user[13])
-                    if summ >= 0:
+                    if summ > 0:
                         text += f'{user[0]}: {summ} руб. на номер {user[3]}\n\n'
                         markup_.append([f'вывести;{user[0]};{summ}', f'притензия;{user[0]}'])
                 if len(markup_) != 0:
