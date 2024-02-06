@@ -1,26 +1,32 @@
 import os
 import random
+import sqlite3
 
-import telebot, pymysql, time, requests
+import telebot, time, requests
 from telebot import types
 from textes import *
 
-token = os.environ['TELEGRAM_TOKEN']
-#token = 'secret'
-my_login = os.environ['MY_LOGIN']
-#my_login = 'secret'
-api_access_token = os.environ['API_ACCESS_TOKEN']
-#api_access_token = 'secret'
-passwd_db = os.environ['PASSWD_DB']
-#passwd_db = 'secret'
+#token = os.environ['TELEGRAM_TOKEN']
+token = '1765836611:AAE31bq6dPYpuGw0TJa1z_Aw72fHQSxNGNI'
+#my_login = os.environ['MY_LOGIN']
+my_login = '79505876657'
+#api_access_token = os.environ['API_ACCESS_TOKEN']
+api_access_token = 'e832ffd645523a69e62a3201f0fdfb78'
+#passwd_db = os.environ['PASSWD_DB']
+passwd_db = 'd01ea3eb'
 
 abc = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'X', 'Y', 'Z']
 
 
 bot = telebot.TeleBot(token)
 
-con = pymysql.connect(host="us-cdbr-east-03.cleardb.com", user="b40f50224688c7", passwd=passwd_db, db='heroku_80fffc474875cce')
+# con = pymysql.connect(host="us-cdbr-east-03.cleardb.com", user="b40f50224688c7", passwd=passwd_db, db='heroku_80fffc474875cce')
+# cur = con.cursor()
+
+con = sqlite3.connect('db_bot.db')
 cur = con.cursor()
+
+
 timer_con = time.time()
 
 
@@ -257,10 +263,14 @@ def create_con():
     global con, cur, timer_con
     text = f'Срок действия курсора вышел ({int(time.time() - timer_con)}сек.)'
     print(text)
-    con = pymysql.connect(host="us-cdbr-east-03.cleardb.com",
-                          user="b40f50224688c7", passwd="d01ea3eb",
-                          db='heroku_80fffc474875cce')
+    # con = pymysql.connect(host="us-cdbr-east-03.cleardb.com",
+    #                       user="b40f50224688c7", passwd="d01ea3eb",
+    #                       db='heroku_80fffc474875cce')
+    # cur = con.cursor()
+
+    con = sqlite3.connect('db_bot.db')
     cur = con.cursor()
+
     timer_con = time.time()
 
 
@@ -308,7 +318,7 @@ def send_help(message):
         bot.send_message(message.chat.id, 'Переподключение к базе данных прошло успешно.')
 
     elif message.text == '/start':
-        check_timer_con()
+        check_timer_con(1)
         cur.execute(f"""SELECT DISTINCT * FROM users
     WHERE id = '{message.chat.id}'""")
         result = cur.fetchall()
@@ -364,6 +374,7 @@ def process_channel_message(message):
 def echo_all(message):
     print(f'Новое сообщение от {message.chat.first_name} {message.chat.last_name}: {message.text}')
     try:
+        check_timer_con(1)
         data_of_person = get_data_of_person(message)[0]
     except Exception:
         text = 'что-то пошло не так. Скорее всего потеряно соединение с сервером MySQL во время запроса. Попробуйте ещё раз, а мы пока наладим соединение'
@@ -456,7 +467,7 @@ def echo_all(message):
                         markup = markup = create_markup([[button_16], [button_back]])
                     else:
                         bot.send_message(message.chat.id, text_30 + f' "{data_of_person[1]}" (ковычки не надо)')
-                        text = f'С этим кодом вы будите получать {data_of_person[9]}%'
+                        text = f'С этим кодом вы будите получать {data_of_person[9]}% '
                         markup = create_markup(buttons_main_menu)
                         change_type_menu(message, 2)
             else:
@@ -526,7 +537,7 @@ def echo_all(message):
             else:
                 num_phone = check_num_phone(message.text)
                 if num_phone:
-                    check_timer_con()
+                    check_timer_con(1)
                     inquiry = f"""UPDATE users
     SET type_menu = 2, num_phone = '{num_phone}', payment_type = 0
         WHERE id = '{message.chat.id}'"""
@@ -546,7 +557,7 @@ def echo_all(message):
                 markup = markup = create_markup([[button_14], [button_15], [button_back]])
             else:
                 num_phone = message.text
-                check_timer_con()
+                check_timer_con(1)
                 inquiry = f"""UPDATE users
     SET type_menu = 2, num_phone = '{num_phone}', payment_type = 1
         WHERE id = '{message.chat.id}'"""
@@ -665,7 +676,7 @@ def echo_all(message):
                 markup = create_markup([[button_10], [button_back]])
 
             elif message.text == button_12:
-                bot.send_message(message.chat.id, 'Временно не работает')
+                bot.send_message(message.chat.id, 'Временно не работает, но можно пополнить баланс через qiwi с помощью банковской карты, заплатив небольшую комиссию')
                 #bot.send_message(message.chat.id, f'{text_38} "{data_of_person[5]}" (ковычки не надо)')
                 #bot.send_message(message.chat.id, text_39)
                 text = text_6
